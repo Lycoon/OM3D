@@ -1,2 +1,4 @@
 /TP/build/
 *.user
+/TP/.vs
+/TP/out/build/x64-Debug

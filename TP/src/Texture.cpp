@@ -51,7 +51,7 @@ namespace OM3D
         glTextureSubImage2D(_handle.get(), 0, 0, 0, _size.x, _size.y,
                             gl_format.format, gl_format.component_type,
                             data.data.get());
-        // glGenerateTextureMipmap(_handle.get());
+        glGenerateTextureMipmap(_handle.get());
     }
 
     Texture::Texture(const glm::uvec2 &size, ImageFormat format)
