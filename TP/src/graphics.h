@@ -6,9 +6,13 @@
 
 namespace OM3D
 {
-
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
     static constexpr std::string_view shader_path = "../../shaders/";
     static constexpr std::string_view data_path = "../../data/";
+#else
+    static constexpr std::string_view shader_path = "./shaders/";
+    static constexpr std::string_view data_path = "./data/";
+#endif
 
     class GLHandle : NonCopyable
     {
