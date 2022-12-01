@@ -1,7 +1,9 @@
-#include "Scene.h"
+﻿#include "Scene.h"
 
 #include <TypedBuffer.h>
 #include <shader_structs.h>
+
+#include <glad/glad.h>
 
 namespace OM3D
 {
@@ -47,9 +49,21 @@ namespace OM3D
         light_buffer.bind(BufferUsage::Storage, 1);
 
         // Render every object
+        //TypedBuffer<shader::
+		//ssbo.bind(BufferUsage::Storage, 2);
+        
+        //glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);
+		
+        OM3D::Frustum frustum = camera.build_frustum();
         for (const SceneObject &obj : _objects)
         {
-            obj.render();
+            const auto center_world = glm::vec4(obj.get_mesh()->get_center(), 1) * camera.view_proj_matrix();
+            const auto ray = center_world - glm::vec4(camera.position(), 1);
+
+            if (frustum.is_in(ray))
+            {
+                obj.render();
+            }
         }
     }
 

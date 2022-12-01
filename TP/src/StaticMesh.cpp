@@ -1,14 +1,44 @@
 #include "StaticMesh.h"
 
 #include <glad/glad.h>
+#include <glm/gtx/norm.hpp>
 
 namespace OM3D
 {
+    
 
     StaticMesh::StaticMesh(const MeshData &data)
         : _vertex_buffer(data.vertices)
         , _index_buffer(data.indices)
-    {}
+    {
+        // Ritter's bounding sphere
+        const OM3D::Vertex x = data.vertices[0];
+        OM3D::Vertex y = data.vertices[1];
+        
+        float max_dist = glm::length2(x.position - y.position);
+
+        for (const Vertex& v : data.vertices)
+        {
+            float dst = glm::length2(v.position - x.position);
+            if (dst < max_dist && dst >= 1e-6) {
+                max_dist = dst;
+                y = v;
+            }
+        }
+
+        OM3D::Vertex z = x;
+        for (const Vertex& v : data.vertices)
+        {
+            float dst = glm::length2(v.position - z.position);
+            if (dst < max_dist && dst >= 1e-6) {
+                max_dist = dst;
+                z = v;
+            }
+        }
+
+        this->_center = (z.position - y.position) / 2.0f;
+        this->_radius = max_dist / 2.0f;
+    }
 
     void StaticMesh::draw() const
     {

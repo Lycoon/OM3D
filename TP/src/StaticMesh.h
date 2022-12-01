@@ -26,9 +26,20 @@ namespace OM3D
 
         void draw() const;
 
+        inline const glm::vec3& get_center() const {
+            return _center;
+        }
+
+        inline const float get_radius() const {
+            return _radius;
+        }
+
     private:
         TypedBuffer<Vertex> _vertex_buffer;
         TypedBuffer<u32> _index_buffer;
+
+        glm::vec3 _center;
+        float _radius;
     };
 
 } // namespace OM3D
