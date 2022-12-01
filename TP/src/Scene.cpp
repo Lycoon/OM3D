@@ -3,6 +3,7 @@
 #include <TypedBuffer.h>
 #include <shader_structs.h>
 
+#include <algorithm>
 #include <glad/glad.h>
 
 namespace OM3D
@@ -48,19 +49,53 @@ namespace OM3D
         }
         light_buffer.bind(BufferUsage::Storage, 1);
 
-        // Render every object
-        //TypedBuffer<shader::
-		//ssbo.bind(BufferUsage::Storage, 2);
-        
+        // SSBO
+	    /*TypedBuffer<shader::ModelTransform> tree_tr(nullptr, 1);
+        TypedBuffer<shader::ModelTransform> rock_tr(nullptr, 1);
+		BufferMapping tree_mapping = tree_tr.map(AccessType::WriteOnly);
+		BufferMapping rock_mapping = rock_tr.map(AccessType::WriteOnly);
+
+		for (size_t i = 0; i != _objects.size(); ++i)
+		{
+			const auto& obj = _objects[i];
+			const auto& transform = obj.transform();
+			
+			if (obj.get_material())
+                tree_mapping[i] = { transform };
+            else
+				rock_mapping[i] = { transform };
+		}
+		
+        tree_tr.bind(BufferUsage::Storage, 2);
         //glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);
+        rock_tr.bind(BufferUsage::Storage, 3);
+        //glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0, 1);*/
 		
         OM3D::Frustum frustum = camera.build_frustum();
         for (const SceneObject &obj : _objects)
         {
-            const auto center_world = glm::vec4(obj.get_mesh()->get_center(), 1) * camera.view_proj_matrix();
-            const auto ray = center_world - glm::vec4(camera.position(), 1);
+            const auto transform = obj.transform();
+            const glm::vec3 scale = glm::vec3(glm::length(transform[0]),
+                                              glm::length(transform[1]),
+                                              glm::length(transform[2]));
+            const float max_scale = std::max(std::max(scale.x, scale.y), scale.z);
 
-            if (frustum.is_in(ray))
+            int inside = 0;
+            for (auto normal : {frustum._top_normal, frustum._bottom_normal,
+                                frustum._left_normal, frustum._right_normal,
+                                frustum._near_normal})
+            {
+                const auto center = obj.get_mesh()->get_center();
+
+                const auto mesh_pos_world = transform * glm::vec4(center, 1) + glm::vec4(normal, 1) * obj.get_mesh()->get_radius() * max_scale;
+                const auto ray = mesh_pos_world - glm::vec4(camera.position(), 1);
+
+                const bool is_in = glm::dot(ray, glm::vec4(normal, 1)) > 0.0f;
+                if (is_in)
+                    inside++;
+            }
+
+            if (inside >= 5)
             {
                 obj.render();
             }

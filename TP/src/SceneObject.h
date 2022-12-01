@@ -24,6 +24,14 @@ namespace OM3D
             return _mesh;
         }
 
+        inline const glm::mat4 &get_transform() const {
+            return _transform;
+        }
+
+        inline const std::shared_ptr<Material> get_material() const {
+            return _material;
+        }
+
     private:
         glm::mat4 _transform = glm::mat4(1.0f);
 

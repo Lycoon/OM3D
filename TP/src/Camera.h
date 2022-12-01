@@ -16,14 +16,6 @@ namespace OM3D
         glm::vec3 _right_normal;
         glm::vec3 _left_normal;
 
-    public:
-        inline const bool is_in(const glm::vec3& point_camera) const {
-            return glm::dot(point_camera, _near_normal) > 0 &&
-                glm::dot(point_camera, _top_normal) > 0 &&
-                glm::dot(point_camera, _bottom_normal) > 0 &&
-                glm::dot(point_camera, _right_normal) > 0 &&
-                glm::dot(point_camera, _left_normal) > 0;
-        }
     };
 
     class Camera

@@ -20,7 +20,7 @@ namespace OM3D
         for (const Vertex& v : data.vertices)
         {
             float dst = glm::length2(v.position - x.position);
-            if (dst < max_dist && dst >= 1e-6) {
+            if (dst > max_dist) {
                 max_dist = dst;
                 y = v;
             }
@@ -30,7 +30,7 @@ namespace OM3D
         for (const Vertex& v : data.vertices)
         {
             float dst = glm::length2(v.position - z.position);
-            if (dst < max_dist && dst >= 1e-6) {
+            if (dst > max_dist) {
                 max_dist = dst;
                 z = v;
             }
