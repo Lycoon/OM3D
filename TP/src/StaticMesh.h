@@ -24,7 +24,12 @@ namespace OM3D
 
         StaticMesh(const MeshData &data);
 
+        void setup() const;
         void draw() const;
+        void drawInstanced(size_t instances) const;
+		
+		TypedBuffer<u32>* get_indices() { return &_index_buffer; }
+		TypedBuffer<Vertex>* get_vertices() { return &_vertex_buffer; }
 
         inline const glm::vec3& get_center() const {
             return _center;
