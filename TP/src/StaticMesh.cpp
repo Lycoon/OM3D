@@ -66,7 +66,7 @@ namespace OM3D
         glEnableVertexAttribArray(4);
     }
 
-    void StaticMesh::drawInstanced(size_t instances) const {
+    void StaticMesh::draw_instanced(size_t instances) const {
         setup();
         glDrawElementsInstanced(GL_TRIANGLES, int(_index_buffer.element_count()), GL_UNSIGNED_INT, 0, (GLsizei)instances);
     }
@@ -74,8 +74,7 @@ namespace OM3D
     void StaticMesh::draw() const
     {
         setup();
-        glDrawElements(GL_TRIANGLES, int(_index_buffer.element_count()),
-                       GL_UNSIGNED_INT, nullptr);
+        glDrawElements(GL_TRIANGLES, int(_index_buffer.element_count()), GL_UNSIGNED_INT, nullptr);
     }
 
 } // namespace OM3D

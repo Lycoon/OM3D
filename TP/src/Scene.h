@@ -6,6 +6,7 @@
 #include <SceneObject.h>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 
 namespace OM3D
 {
@@ -23,6 +24,9 @@ namespace OM3D
         void add_object(SceneObject obj);
         void add_object(PointLight obj);
 
+		typedef std::vector<const SceneObject*> SceneObjectList;
+		typedef std::unordered_map<Material*, SceneObjectList> Instances;
+        
     private:
         std::vector<SceneObject> _objects;
         std::vector<PointLight> _point_lights;

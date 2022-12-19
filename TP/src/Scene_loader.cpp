@@ -546,11 +546,12 @@ namespace OM3D
 
                     material = mat;
                 }
-
+                
                 auto scene_object =
                     SceneObject(std::make_shared<StaticMesh>(mesh.value),
-                                std::move(material));
+                        std::move(material));
                 scene_object.set_transform(node_transform);
+                
                 scene->add_object(std::move(scene_object));
             }
         }

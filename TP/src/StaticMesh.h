@@ -26,7 +26,7 @@ namespace OM3D
 
         void setup() const;
         void draw() const;
-        void drawInstanced(size_t instances) const;
+        void draw_instanced(size_t instances) const;
 		
 		TypedBuffer<u32>* get_indices() { return &_index_buffer; }
 		TypedBuffer<Vertex>* get_vertices() { return &_vertex_buffer; }

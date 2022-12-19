@@ -21,13 +21,13 @@ layout(binding = 0) uniform Data {
 
 /* Instancing */
 layout(binding = 2) buffer InstanceTransform {
-    mat4 instance[];
+    ModelTransform instances[];
 };
 
-uniform mat4 model;
+// uniform mat4 model;
 
 void main() {
-    const mat4 model_ = instance[gl_InstanceID];
+    const mat4 model_ = instances[gl_InstanceID].transform;
     const vec4 position = model_ * vec4(in_pos, 1.0);
 	
     out_normal = normalize(mat3(model_) * in_normal);
@@ -40,4 +40,3 @@ void main() {
 
     gl_Position = frame.camera.view_proj * position;
 }
-

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <glad/glad.h>
+#include <glm/gtx/string_cast.hpp>
 
 #include <iostream>
 
@@ -23,7 +24,7 @@ namespace OM3D
     {
         _point_lights.emplace_back(std::move(obj));
     }
-
+    
     void Scene::render(const Camera &camera) const
     {
         // Fill and bind frame data buffer
@@ -51,33 +52,37 @@ namespace OM3D
         }
         light_buffer.bind(BufferUsage::Storage, 1);
 
-        // SSBO
-	    TypedBuffer<shader::ModelTransform> tree_tr(nullptr, 1000);
-        TypedBuffer<shader::ModelTransform> rock_tr(nullptr, 1000);
-		BufferMapping tree_mapping = tree_tr.map(AccessType::WriteOnly);
-		BufferMapping rock_mapping = rock_tr.map(AccessType::WriteOnly);
+		// Fill and bind instance buffer
+        auto instances = Instances();
+        for (const auto& obj : _objects)
+        {
+            auto mat = obj.get_material().get();
+            instances[mat].push_back(&obj);
+        }
 
-		for (size_t i = 0; i != _objects.size(); ++i)
-		{
-			const auto& obj = _objects[i];
-			const auto& transform = obj.transform();
-			
-			if (obj.get_material() != _objects[0].get_material())
-                tree_mapping[i] = { transform };
-            else
-				rock_mapping[i] = { transform };
-		}
-		
-		const auto rock_mesh = _objects[0].get_mesh();
-		const auto tree_mesh = _objects[_objects.size() - 1].get_mesh();
-		
-        tree_tr.bind(BufferUsage::Storage, 2);
-        tree_mesh->drawInstanced(tree_tr.element_count()); // binding attributes
-        rock_tr.bind(BufferUsage::Storage, 2);
-        rock_mesh->drawInstanced(rock_tr.element_count());
+        for (const auto& e : instances)
+        {
+            const auto tr_buffer = std::make_shared<TypedBuffer<shader::ModelTransform>>(
+                nullptr, 
+                std::max(e.second.size(), (size_t)1)
+            );
+            {
+                // Mapping model transforms to SSBO
+                auto mapping = tr_buffer->map(AccessType::WriteOnly);
+                for (int i = 0; i < e.second.size(); ++i) 
+                {
+                    const SceneObject* obj = e.second[i];
+                    mapping[i] = { obj->transform() };
+                }
+            }
+            tr_buffer->bind(BufferUsage::Storage, 2);
+
+            auto mesh = e.second[0]->get_mesh();
+            e.first->bind();
+            mesh->draw_instanced(e.second.size());
+        }
 		
 		// Frustum culling
-		
         /*
         OM3D::Frustum frustum = camera.build_frustum();
         for (const SceneObject &obj : _objects)
