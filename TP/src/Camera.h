@@ -25,6 +25,15 @@ namespace OM3D
 
         void set_view(const glm::mat4 &matrix);
         void set_proj(const glm::mat4 &matrix);
+        
+        void set_speed(const float speed);
+        const float get_speed() const;
+        const float get_sensitivity() const;
+        const float get_fov() const;
+        
+        float* get_speed_ptr();
+        float* get_fov_ptr();
+        float* get_sensitivity_ptr();
 
         glm::vec3 position() const;
         glm::vec3 forward() const;
@@ -47,6 +56,8 @@ namespace OM3D
 
         float _fov_y;
         float _aspect_ratio;
+		float _speed = 10.0f;
+        float _sensitivity = 0.01f;
     };
 
 } // namespace OM3D

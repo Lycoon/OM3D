@@ -72,7 +72,7 @@ void process_inputs(GLFWwindow *window, Camera &camera)
             movement += camera.up();
         }
 
-        float speed = 400.0f;
+        float speed = camera.get_speed() * 100.0f;
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         {
             speed *= 2.0f;
@@ -89,7 +89,7 @@ void process_inputs(GLFWwindow *window, Camera &camera)
 
     if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
     {
-        const glm::vec2 delta = glm::vec2(mouse_pos - new_mouse_pos) * 0.01f;
+        const glm::vec2 delta = glm::vec2(mouse_pos - new_mouse_pos) * camera.get_sensitivity();
         if (delta.length() > 0.0f)
         {
             glm::mat4 rot = glm::rotate(glm::mat4(1.0f), delta.x,
@@ -177,12 +177,24 @@ int main(int, char **)
     SceneView scene_view(scene.get());
 
     auto tonemap_program = Program::from_file("tonemap.comp");
+    auto gbuffer_program = Program::from_files("gbuffer.frag", "basic.vert");
 
-    Texture depth(window_size, ImageFormat::Depth32_FLOAT);
+    bool enableTonemapping = true;
+    bool enableLightCulling = false;
+
+    // main framebuffer
     Texture lit(window_size, ImageFormat::RGBA16_FLOAT);
-    Texture color(window_size, ImageFormat::RGBA8_UNORM);
+    Texture depth(window_size, ImageFormat::Depth32_FLOAT);
     Framebuffer main_framebuffer(&depth, std::array{ &lit });
+    
+    // tonemap framebuffer
+    Texture color(window_size, ImageFormat::RGBA8_UNORM);
     Framebuffer tonemap_framebuffer(nullptr, std::array{ &color });
+    
+    // g-buffer
+    Texture albedo(window_size, ImageFormat::RGBA8_UNORM); // no RGBA8_sRGB because bugs
+    Texture normal(window_size, ImageFormat::RGBA8_UNORM);
+    Framebuffer gbuffer(&depth, std::array{ &albedo, &normal });
 
     for (;;)
     {
@@ -207,27 +219,49 @@ int main(int, char **)
             scene_view.render();
         }
 
-        // Apply a tonemap in compute shader
+        if (enableLightCulling)
         {
-            tonemap_program->bind();
-            lit.bind(0);
-            color.bind_as_image(1, AccessType::WriteOnly);
-            glDispatchCompute(align_up_to(window_size.x, 8),
-                              align_up_to(window_size.y, 8), 1);
+            {
+                gbuffer.bind();
+                gbuffer_program->bind();
+                albedo.bind_as_image(0, AccessType::WriteOnly);
+                normal.bind_as_image(1, AccessType::WriteOnly);
+            }
         }
-        // Blit tonemap result to screen
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
-        tonemap_framebuffer.blit();
 
+        if (enableTonemapping)
+        {
+            // Apply a tonemap in compute shader
+            {
+                tonemap_framebuffer.bind();
+                tonemap_program->bind();
+                lit.bind(0);
+                color.bind_as_image(1, AccessType::WriteOnly);
+                glDispatchCompute(align_up_to(window_size.x, 8),
+                                  align_up_to(window_size.y, 8), 1);
+            }
+        }
+        
+        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        if (enableTonemapping)
+            tonemap_framebuffer.blit();
+        else
+            main_framebuffer.blit();
+        
         // GUI
         imgui.start();
         {
+            // Scene loading
+            ImGui::Text("Scene loading");
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+            
             char buffer[1024] = {};
             if (ImGui::InputText("Load scene", buffer, sizeof(buffer),
                                  ImGuiInputTextFlags_EnterReturnsTrue))
             {
                 load_scene(buffer, scene, scene_view);
             }
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
             
 			ImGui::Button(SPONZA_GLB);
             if (ImGui::IsItemClicked())
@@ -247,6 +281,24 @@ int main(int, char **)
             ImGui::Button(FOREST_HUGE_GLB);
             if (ImGui::IsItemClicked())
                 load_scene(FOREST_HUGE_GLB, scene, scene_view);
+
+            // Render features
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+            ImGui::Separator();
+			ImGui::Text("Render");
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+            
+            ImGui::Checkbox("Tonemapping", &enableTonemapping);
+            ImGui::Checkbox("Light culling", &enableLightCulling);
+
+            // Camera
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+            ImGui::Separator();
+			ImGui::Text("Camera");
+            ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+			ImGui::SliderFloat("Speed", scene_view.camera().get_speed_ptr(), 0.0f, 20.0f);
+			ImGui::SliderFloat("Sensitivity", scene_view.camera().get_sensitivity_ptr(), 0.001f, 0.03f);
         }
         imgui.finish();
 

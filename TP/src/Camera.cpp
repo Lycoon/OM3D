@@ -58,6 +58,41 @@ namespace OM3D
         update();
     }
 
+	void Camera::set_speed(const float speed)
+	{
+		_speed = speed;
+	}
+
+    const float Camera::get_speed() const
+    {
+		return _speed;
+    }
+
+    const float Camera::get_sensitivity() const
+    {
+        return _sensitivity;
+    }
+
+    const float Camera::get_fov() const
+    {
+        return _fov_y;
+    }
+
+	float* Camera::get_speed_ptr()
+	{
+		return &_speed;
+	}
+
+	float* Camera::get_fov_ptr()
+	{
+		return &_fov_y;
+	}
+    
+	float* Camera::get_sensitivity_ptr()
+	{
+		return &_sensitivity;
+	}
+    
     glm::vec3 Camera::position() const
     {
         return extract_position(_view);
