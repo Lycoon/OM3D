@@ -11,6 +11,13 @@
 #include <iostream>
 #include <vector>
 
+#define DATA_PATH "../../data/"
+
+const char* FOREST_HUGE_GLB = "forest_huge.glb";
+const char* BOX_GLB = "box.glb";
+const char* CUBE_GLB = "cube.glb";
+const char* SPONZA_GLB = "sponza.glb";
+
 using namespace OM3D;
 
 static float delta_time = 0.0f;
@@ -60,11 +67,15 @@ void process_inputs(GLFWwindow *window, Camera &camera)
         {
             movement -= camera.right();
         }
+        if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS)
+        {
+            movement += camera.up();
+        }
 
-        float speed = 10.0f;
+        float speed = 400.0f;
         if (glfwGetKey(window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS)
         {
-            speed *= 10.0f;
+            speed *= 2.0f;
         }
 
         if (movement.length() > 0.0f)
@@ -99,7 +110,7 @@ std::unique_ptr<Scene> create_default_scene()
     auto scene = std::make_unique<Scene>();
 
     // Load default cube model
-    auto result = Scene::from_gltf(std::string(data_path) + "cube.glb");
+    auto result = Scene::from_gltf(std::string(data_path) + "sponza.glb");
     ALWAYS_ASSERT(result.is_ok, "Unable to load default scene");
     scene = std::move(result.value);
 
@@ -122,6 +133,21 @@ std::unique_ptr<Scene> create_default_scene()
     return scene;
 }
 
+void load_scene(std::string sceneName, std::unique_ptr<Scene>& scene, SceneView& scene_view)
+{
+    auto result = Scene::from_gltf(DATA_PATH + sceneName);
+    if (!result.is_ok)
+    {
+        std::cerr << "Unable to load scene (" << sceneName << ")"
+            << std::endl;
+    }
+    else
+    {
+        scene = std::move(result.value);
+        scene_view = SceneView(scene.get());
+    }
+}
+
 int main(int, char **)
 {
     DEBUG_ASSERT([] {
@@ -137,7 +163,7 @@ int main(int, char **)
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
     GLFWwindow *window = glfwCreateWindow(window_size.x, window_size.y,
-                                          "TP window", nullptr, nullptr);
+                                          "Foward+ Renderer", nullptr, nullptr);
     glfw_check(window);
     DEFER(glfwDestroyWindow(window));
 
@@ -200,18 +226,27 @@ int main(int, char **)
             if (ImGui::InputText("Load scene", buffer, sizeof(buffer),
                                  ImGuiInputTextFlags_EnterReturnsTrue))
             {
-                auto result = Scene::from_gltf(buffer);
-                if (!result.is_ok)
-                {
-                    std::cerr << "Unable to load scene (" << buffer << ")"
-                              << std::endl;
-                }
-                else
-                {
-                    scene = std::move(result.value);
-                    scene_view = SceneView(scene.get());
-                }
+                load_scene(buffer, scene, scene_view);
             }
+            
+			ImGui::Button(SPONZA_GLB);
+            if (ImGui::IsItemClicked())
+                load_scene(SPONZA_GLB, scene, scene_view);
+
+            ImGui::SameLine();
+            ImGui::Button(BOX_GLB);
+            if (ImGui::IsItemClicked())
+                load_scene(BOX_GLB, scene, scene_view);
+
+            ImGui::SameLine();
+            ImGui::Button(CUBE_GLB);
+            if (ImGui::IsItemClicked())
+                load_scene(CUBE_GLB, scene, scene_view);
+
+            ImGui::SameLine();
+            ImGui::Button(FOREST_HUGE_GLB);
+            if (ImGui::IsItemClicked())
+                load_scene(FOREST_HUGE_GLB, scene, scene_view);
         }
         imgui.finish();
 
