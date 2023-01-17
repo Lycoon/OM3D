@@ -75,8 +75,7 @@ namespace OM3D
 
         glBlitNamedFramebuffer(_handle.get(), binding, 0, 0, _size.x, _size.y,
                                0, 0, viewport[2], viewport[3],
-                               GL_COLOR_BUFFER_BIT
-                                   | (depth ? GL_DEPTH_BUFFER_BIT : 0),
+                               GL_COLOR_BUFFER_BIT | (depth ? GL_DEPTH_BUFFER_BIT : 0),
                                GL_NEAREST);
     }
 

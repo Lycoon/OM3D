@@ -34,4 +34,3 @@ void main() {
 
     gl_Position = frame.camera.view_proj * position;
 }
-

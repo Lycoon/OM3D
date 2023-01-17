@@ -148,6 +148,18 @@ void load_scene(std::string sceneName, std::unique_ptr<Scene>& scene, SceneView&
     }
 }
 
+void geometry_pass(Framebuffer& gbuffer, std::shared_ptr<Program> gbuffer_program, SceneView& scene_view)
+{
+    gbuffer.bind();
+    gbuffer_program->bind();
+    scene_view.render();
+}
+
+void light_pass(Texture& albedo, Texture& normal, Framebuffer& gbuffer, std::shared_ptr<Program> gbuffer_program)
+{
+    // glBindFramebuffer(GL_FRAMEBUFFER, 0); // default screen
+}
+
 int main(int, char **)
 {
     DEBUG_ASSERT([] {
@@ -178,9 +190,10 @@ int main(int, char **)
 
     auto tonemap_program = Program::from_file("tonemap.comp");
     auto gbuffer_program = Program::from_files("gbuffer.frag", "basic.vert");
+    // auto debug_gbuffer = Program::from_files("gbuffer.frag", "screen.vert");
 
     bool enableTonemapping = true;
-    bool enableLightCulling = false;
+    bool enableDeferred = false;
 
     // main framebuffer
     Texture lit(window_size, ImageFormat::RGBA16_FLOAT);
@@ -214,26 +227,21 @@ int main(int, char **)
         }
 
         // Render the scene
+        if (enableDeferred)
+        {
+            geometry_pass(gbuffer, gbuffer_program, scene_view);
+            light_pass(albedo, normal, gbuffer, gbuffer_program);
+        }
+        else
         {
             main_framebuffer.bind();
             scene_view.render();
-        }
-
-        if (enableLightCulling)
-        {
-            {
-                gbuffer.bind();
-                gbuffer_program->bind();
-                albedo.bind_as_image(0, AccessType::WriteOnly);
-                normal.bind_as_image(1, AccessType::WriteOnly);
-            }
         }
 
         if (enableTonemapping)
         {
             // Apply a tonemap in compute shader
             {
-                tonemap_framebuffer.bind();
                 tonemap_program->bind();
                 lit.bind(0);
                 color.bind_as_image(1, AccessType::WriteOnly);
@@ -245,8 +253,11 @@ int main(int, char **)
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
         if (enableTonemapping)
             tonemap_framebuffer.blit();
+        else if (enableDeferred)
+            gbuffer.blit();
         else
-            main_framebuffer.blit();
+			main_framebuffer.blit();
+		
         
         // GUI
         imgui.start();
@@ -289,7 +300,7 @@ int main(int, char **)
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
             
             ImGui::Checkbox("Tonemapping", &enableTonemapping);
-            ImGui::Checkbox("Light culling", &enableLightCulling);
+            ImGui::Checkbox("Deferred rendering", &enableDeferred);
 
             // Camera
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
