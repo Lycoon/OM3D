@@ -61,6 +61,14 @@ void main() {
     out_color *= texture(in_texture, in_uv);
 #endif
 
+#ifdef DEBUG_POSITION
+    out_color = vec4(in_position, 1.0);
+#endif
+
+#ifdef DEBUG_UV
+    out_color = vec4(in_uv, 0.0, 1.0);
+#endif
+
 #ifdef DEBUG_NORMAL
     out_color = vec4(normal * 0.5 + 0.5, 1.0);
 #endif

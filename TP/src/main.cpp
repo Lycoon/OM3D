@@ -10,13 +10,14 @@
 #include <imgui/imgui.h>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 
 #define DATA_PATH "../../data/"
 
-const char* FOREST_HUGE_GLB = "forest_huge.glb";
-const char* BOX_GLB = "box.glb";
-const char* CUBE_GLB = "cube.glb";
-const char* SPONZA_GLB = "sponza.glb";
+const std::array<std::string, 4> SCENES = { "sponza.glb", "forest_huge.glb", "box.glb", "cube.glb" };
+std::string selected_scene = SCENES[0];
+glm::mat4 last_proj_matrix;
+glm::mat4 last_view_matrix;
 
 using namespace OM3D;
 
@@ -110,7 +111,7 @@ std::unique_ptr<Scene> create_default_scene()
     auto scene = std::make_unique<Scene>();
 
     // Load default cube model
-    auto result = Scene::from_gltf(std::string(data_path) + "sponza.glb");
+    auto result = Scene::from_gltf(std::string(data_path) + "sponza.glb", {});
     ALWAYS_ASSERT(result.is_ok, "Unable to load default scene");
     scene = std::move(result.value);
 
@@ -133,19 +134,27 @@ std::unique_ptr<Scene> create_default_scene()
     return scene;
 }
 
-void load_scene(std::string sceneName, std::unique_ptr<Scene>& scene, SceneView& scene_view)
+void load_scene(std::string sceneName, std::unique_ptr<Scene>& scene, SceneView& scene_view, std::vector<std::string> debugDefines)
 {
-    auto result = Scene::from_gltf(DATA_PATH + sceneName);
+	last_view_matrix = scene_view.camera().view_matrix(); // save view matrix to restore it on scene load
+    auto result = Scene::from_gltf(DATA_PATH + sceneName, debugDefines);
     if (!result.is_ok)
-    {
-        std::cerr << "Unable to load scene (" << sceneName << ")"
-            << std::endl;
-    }
+        std::cerr << "Unable to load scene (" << sceneName << ")" << std::endl;
     else
     {
+		std::cout << "Loaded scene " << sceneName << " successfully." << std::endl;
         scene = std::move(result.value);
         scene_view = SceneView(scene.get());
+		scene_view.camera().set_view(last_view_matrix);
     }
+}
+
+void update_selected_defines(std::vector<std::string>& selectedDefines, std::string define, bool condition)
+{
+    if (condition)
+        selectedDefines.push_back(define);
+    else
+        selectedDefines.erase(std::remove(selectedDefines.begin(), selectedDefines.end(), define), selectedDefines.end());
 }
 
 void geometry_pass(Framebuffer& gbuffer, std::shared_ptr<Program> gbuffer_program, SceneView& scene_view)
@@ -192,8 +201,15 @@ int main(int, char **)
     auto gbuffer_program = Program::from_files("gbuffer.frag", "basic.vert");
     // auto debug_gbuffer = Program::from_files("gbuffer.frag", "screen.vert");
 
+    // GUI Variables
     bool enableTonemapping = true;
     bool enableDeferred = false;
+
+    bool debugNormals = false;
+    bool debugPosition = false;
+    bool debugUV = false;
+
+    std::vector<std::string> selectedDefines;
 
     // main framebuffer
     Texture lit(window_size, ImageFormat::RGBA16_FLOAT);
@@ -267,31 +283,23 @@ int main(int, char **)
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
             
             char buffer[1024] = {};
-            if (ImGui::InputText("Load scene", buffer, sizeof(buffer),
-                                 ImGuiInputTextFlags_EnterReturnsTrue))
+            if (ImGui::InputText("Load scene", buffer, sizeof(buffer), ImGuiInputTextFlags_EnterReturnsTrue))
             {
-                load_scene(buffer, scene, scene_view);
+                load_scene(buffer, scene, scene_view, selectedDefines);
             }
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
-            
-			ImGui::Button(SPONZA_GLB);
-            if (ImGui::IsItemClicked())
-                load_scene(SPONZA_GLB, scene, scene_view);
 
-            ImGui::SameLine();
-            ImGui::Button(BOX_GLB);
-            if (ImGui::IsItemClicked())
-                load_scene(BOX_GLB, scene, scene_view);
+            for (const std::string scene_name : SCENES)
+            {
+                ImGui::Button(scene_name.c_str());
+                ImGui::SameLine();
 
-            ImGui::SameLine();
-            ImGui::Button(CUBE_GLB);
-            if (ImGui::IsItemClicked())
-                load_scene(CUBE_GLB, scene, scene_view);
-
-            ImGui::SameLine();
-            ImGui::Button(FOREST_HUGE_GLB);
-            if (ImGui::IsItemClicked())
-                load_scene(FOREST_HUGE_GLB, scene, scene_view);
+                if (ImGui::IsItemClicked())
+                {
+                    selected_scene = scene_name;
+                    load_scene(scene_name, scene, scene_view, selectedDefines);
+                }
+            }
 
             // Render features
             ImGui::Dummy(ImVec2(0.0f, 5.0f));
@@ -301,6 +309,24 @@ int main(int, char **)
             
             ImGui::Checkbox("Tonemapping", &enableTonemapping);
             ImGui::Checkbox("Deferred rendering", &enableDeferred);
+
+            if (ImGui::Checkbox("Show normals", &debugNormals))
+            {
+                update_selected_defines(selectedDefines, "DEBUG_NORMAL", debugNormals);
+                load_scene(selected_scene, scene, scene_view, selectedDefines);
+            }
+
+            if (ImGui::Checkbox("Show position", &debugPosition))
+            {
+                update_selected_defines(selectedDefines, "DEBUG_POSITION", debugPosition);
+                load_scene(selected_scene, scene, scene_view, selectedDefines);
+            }
+
+            if (ImGui::Checkbox("Show UV", &debugUV))
+            {
+                update_selected_defines(selectedDefines, "DEBUG_UV", debugUV);
+                load_scene(selected_scene, scene, scene_view, selectedDefines);
+            }
 
             // Camera
             ImGui::Dummy(ImVec2(0.0f, 5.0f));

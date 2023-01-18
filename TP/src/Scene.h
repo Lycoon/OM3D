@@ -16,7 +16,7 @@ namespace OM3D
         Scene();
 
         static Result<std::unique_ptr<Scene>>
-        from_gltf(const std::string &file_name);
+        from_gltf(const std::string &file_name, std::vector<std::string> debugDefines);
 
         void render(const Camera &camera) const;
 

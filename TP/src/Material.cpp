@@ -88,33 +88,40 @@ namespace OM3D
         _program->bind();
     }
 
-    std::shared_ptr<Material> Material::empty_material()
+    std::shared_ptr<Material> Material::empty_material(std::vector<std::string> debugDefines)
     {
         static std::weak_ptr<Material> weak_material;
         auto material = weak_material.lock();
+
         if (!material)
         {
             material = std::make_shared<Material>();
-            material->_program = Program::from_files("lit.frag", "basic.vert");
+            material->_program = Program::from_files("lit.frag", "basic.vert", debugDefines);
             weak_material = material;
         }
+        
         return material;
     }
 
-    Material Material::textured_material()
+    Material Material::textured_material(std::vector<std::string> debugDefines)
     {
+        std::vector<std::string> defines = { "TEXTURED" };
+        defines.insert(defines.end(), debugDefines.begin(), debugDefines.end());
+
         Material material;
-        material._program =
-            Program::from_files("lit.frag", "basic.vert", { "TEXTURED" });
+        material._program = Program::from_files("lit.frag", "basic.vert", defines);
+        
         return material;
     }
 
-    Material Material::textured_normal_mapped_material()
+    Material Material::textured_normal_mapped_material(std::vector<std::string> debugDefines)
     {
+        std::vector<std::string> defines = { "TEXTURED", "NORMAL_MAPPED" };
+        defines.insert(defines.end(), debugDefines.begin(), debugDefines.end());
+        
         Material material;
-        material._program = Program::from_files(
-            "lit.frag", "basic.vert",
-            std::array<std::string, 2>{ "TEXTURED", "NORMAL_MAPPED" });
+        material._program = Program::from_files("lit.frag", "basic.vert", defines);
+
         return material;
     }
 

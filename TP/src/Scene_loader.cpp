@@ -374,7 +374,7 @@ namespace OM3D
     }
 
     Result<std::unique_ptr<Scene>>
-    Scene::from_gltf(const std::string &file_name)
+    Scene::from_gltf(const std::string &file_name, std::vector<std::string> debugDefines)
     {
         const double time = program_time();
         DEFER(std::cout << file_name << " loaded in "
@@ -527,18 +527,18 @@ namespace OM3D
 
                         if (!albedo)
                         {
-                            mat = Material::empty_material();
+                            mat = Material::empty_material(debugDefines);
                         }
                         else if (!normal)
                         {
                             mat = std::make_shared<Material>(
-                                Material::textured_material());
+                                Material::textured_material(debugDefines));
                             mat->set_texture(0u, albedo);
                         }
                         else
                         {
                             mat = std::make_shared<Material>(
-                                Material::textured_normal_mapped_material());
+                                Material::textured_normal_mapped_material(debugDefines));
                             mat->set_texture(0u, albedo);
                             mat->set_texture(1u, normal);
                         }

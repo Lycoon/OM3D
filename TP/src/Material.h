@@ -41,9 +41,9 @@ namespace OM3D
 
         void bind() const;
 
-        static std::shared_ptr<Material> empty_material();
-        static Material textured_material();
-        static Material textured_normal_mapped_material();
+        static std::shared_ptr<Material> empty_material(std::vector<std::string> debugDefines);
+        static Material textured_material(std::vector<std::string> debugDefines);
+        static Material textured_normal_mapped_material(std::vector<std::string> debugDefines);
 
     private:
         std::shared_ptr<Program> _program;
